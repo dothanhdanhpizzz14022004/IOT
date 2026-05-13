@@ -1,26 +1,41 @@
 #include "neo_blinky.h"
+#include "global.h"         
+#include <Adafruit_NeoPixel.h>
 
+Adafruit_NeoPixel strip(LED_COUNT, NEO_PIN, NEO_GRB + NEO_KHZ800);
 
-void neo_blinky(void *pvParameters){
+#define HUMI_LOW_THRESHOLD     40.0f
+#define HUMI_NORMAL_THRESHOLD  70.0f
 
-    Adafruit_NeoPixel strip(LED_COUNT, NEO_PIN, NEO_GRB + NEO_KHZ800);
+void updateNeoPixelColor(float humidity) {
+    uint32_t color = strip.Color(0, 0, 0);  
+
+    if (humidity < HUMI_LOW_THRESHOLD) {
+        color = strip.Color(0, 0, 255);      // blue
+    } 
+    else if (humidity <= HUMI_NORMAL_THRESHOLD) {
+        color = strip.Color(0, 255, 0);      // green 
+    } 
+    else { 
+        color = strip.Color(255, 0, 0);     // red
+    }
+
+    strip.setPixelColor(0, color);
+    strip.show();
+}
+
+void neo_blinky(void *pvParameters) {
     strip.begin();
-    // Set all pixels to off to start
+    strip.setBrightness(200);   
     strip.clear();
     strip.show();
 
-    while(1) {                          
-        strip.setPixelColor(0, strip.Color(255, 0, 0)); // Set pixel 0 to red
-        strip.show(); // Update the strip
+    Serial.println("NeoPixel Task Started - Controlled by Humidity");
 
-        // Wait for 500 milliseconds
-        vTaskDelay(500);
-
-        // Set the pixel to off
-        strip.setPixelColor(0, strip.Color(0, 0, 0)); // Turn pixel 0 off
-        strip.show(); // Update the strip
-
-        // Wait for another 500 milliseconds
-        vTaskDelay(500);
-    }
+    while (1) {
+        if (glob_humidity > 0.0f) {           
+            updateNeoPixelColor(glob_humidity);
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));   
+    }  
 }

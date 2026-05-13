@@ -8,6 +8,11 @@ String CORE_IOT_TOKEN;
 String CORE_IOT_SERVER;
 String CORE_IOT_PORT;
 
+bool led1State = false;
+bool led2State = false;
 
 boolean isWifiConnected = false;
 SemaphoreHandle_t xBinarySemaphoreInternet = xSemaphoreCreateBinary();
+SemaphoreHandle_t xSemaphoreNeoPixel = NULL; 
+
+String glob_anomaly_status = "UNKNOWN";

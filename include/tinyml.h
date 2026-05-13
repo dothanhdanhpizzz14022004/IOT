@@ -2,7 +2,6 @@
 #define __TINY_ML__
 
 #include <Arduino.h>
-
 #include "dht_anomaly_model.h"
 #include "global.h"
 
@@ -14,6 +13,7 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 
 void setupTinyML();
+String runTinyMLPrediction(float temperature, float humidity);
 void tiny_ml_task(void *pvParameters);
 
 #endif
