@@ -1,0 +1,6 @@
+# Pinned per Video 2 instructions. Python 3.6-3.9 (tested on 3.9).
+# hbmqtt uses legacy pkg_resources; setuptools>=81 removes it.
+websockets==8.1
+hbmqtt==0.9.6
+paho-mqtt==1.6.1
+setuptools<81

@@ -1,30 +1,37 @@
 #include "coreiot.h"
 
-// ----------- CONFIGURE THESE! -----------
-const char* coreIOT_Server = "10.235.76.226";  
-const char* coreIOT_Token = "g7drm1amhd3dchr379xu";   // Device Access Token
-const int   mqttPort = 1883;
-// ----------------------------------------
-
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+// Decide local broker vs CoreIOT cloud by the server address
+static bool is_cloud_server() {
+  return CORE_IOT_SERVER.indexOf("coreiot.io") >= 0;
+}
 
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect (username=token, password=empty)
-    //if (client.connect("ESP32Client", coreIOT_Token, NULL)) {
-    String clientId = "ESP32Client-";
-    clientId += String(random(0xffff), HEX);
+    Serial.print("Attempting MQTT connection to ");
+    Serial.print(CORE_IOT_SERVER);
+    Serial.print(":");
+    Serial.println(CORE_IOT_PORT);
 
-    if (client.connect(clientId.c_str())) {
-        
-      Serial.println("connected to CoreIOT Server!");
+    String clientId = "ESP32Client-";
+    clientId += String((uint32_t)ESP.getEfuseMac(), HEX);
+
+    bool ok;
+    if (is_cloud_server() && CORE_IOT_TOKEN.length() > 0) {
+      // CoreIOT: MQTT username = access token, empty password
+      ok = client.connect(clientId.c_str(), CORE_IOT_TOKEN.c_str(), "");
+    } else {
+      // Local broker: anonymous (matches Tiny MQTT config)
+      ok = client.connect(clientId.c_str());
+    }
+
+    if (ok) {
+      Serial.println("connected to MQTT broker!");
       client.subscribe("v1/devices/me/rpc/request/+");
       Serial.println("Subscribed to v1/devices/me/rpc/request/+");
-
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -117,10 +124,17 @@ void coreiot_task(void *pvParameters){
         }
         client.loop();
 
-        // Sample payload, publish to 'v1/devices/me/telemetry'
-        String payload = "{\"temperature\":" + String(glob_temperature) +  ",\"humidity\":" + String(glob_humidity) + "}";
-        
-        client.publish("v1/devices/me/telemetry", payload.c_str());
+        // Telemetry payload. Include deviceName so Tiny Gateway can demux local-broker traffic.
+        String deviceName = "yolo-" + String((uint32_t)ESP.getEfuseMac(), HEX);
+        String payload = "{\"deviceName\":\"" + deviceName +
+                         "\",\"temperature\":" + String(glob_temperature) +
+                         ",\"humidity\":" + String(glob_humidity) + "}";
+
+        // Cloud CoreIOT expects device-scoped topic; local gateway listens on a custom topic.
+        const char* topic = is_cloud_server()
+            ? "v1/devices/me/telemetry"
+            : "gateway/telemetry";
+        client.publish(topic, payload.c_str());
 
 
         
