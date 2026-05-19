@@ -26,16 +26,16 @@ void updateNeoPixelColor(float humidity) {
 
 void neo_blinky(void *pvParameters) {
     strip.begin();
-    strip.setBrightness(200);   
+    strip.setBrightness(200);
     strip.clear();
     strip.show();
 
-    Serial.println("NeoPixel Task Started - Controlled by Humidity");
-
     while (1) {
-        if (glob_humidity > 0.0f) {           
-            updateNeoPixelColor(glob_humidity);
+        if (xSemaphoreTake(xSemaphoreNeoPixel, pdMS_TO_TICKS(1000)) == pdTRUE) {
+            if (glob_humidity > 0.0f) {
+                updateNeoPixelColor(glob_humidity);
+            }
         }
-        vTaskDelay(pdMS_TO_TICKS(500));   
-    }  
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
 }

@@ -30,6 +30,7 @@ void temp_humi_monitor(void *pvParameters){
         //Update global variables for temperature and humidity
         glob_temperature = temperature;
         glob_humidity = humidity;
+        xSemaphoreGive(xSemaphoreNeoPixel);
 
         // Print the results
         
